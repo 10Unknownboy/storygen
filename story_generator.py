@@ -191,6 +191,8 @@ def generate_story(username: str) -> dict:
         fps=VIDEO_FPS,
         codec=VIDEO_CODEC,
         audio_codec="aac",
+        threads=1,
+        preset="ultrafast",
         logger=None # Suppresses progress bar in terminal
     )
     logger.info("Video rendered successfully.")
