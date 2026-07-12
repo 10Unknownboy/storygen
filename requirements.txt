@@ -1,0 +1,10 @@
+instagrapi
+fastapi
+uvicorn
+APScheduler
+Pillow
+pandas
+python-dotenv
+Jinja2
+SQLAlchemy
+pytz

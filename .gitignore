@@ -1,0 +1,14 @@
+# Environments
+.env
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Data & Secrets
+sessions/
+database/
+logs/
+stories/
+
+# Note: birthdays.csv should be uploaded, so we don't ignore it!
