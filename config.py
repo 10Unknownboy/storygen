@@ -14,9 +14,11 @@ FONTS_DIR = BASE_DIR / 'fonts'
 ASSETS_DIR = BASE_DIR / 'assets'
 STORIES_DIR = BASE_DIR / 'stories'
 DB_DIR = BASE_DIR / 'database'
+MUSIC_DIR = ASSETS_DIR / 'music'
+GENERATED_DIR = ASSETS_DIR / 'generated'
 
 # Ensure directories exist
-for directory in [LOGS_DIR, SESSIONS_DIR, FONTS_DIR, ASSETS_DIR, STORIES_DIR, DB_DIR]:
+for directory in [LOGS_DIR, SESSIONS_DIR, FONTS_DIR, ASSETS_DIR, STORIES_DIR, DB_DIR, MUSIC_DIR, GENERATED_DIR]:
     directory.mkdir(exist_ok=True)
 
 # Timezone Configuration
@@ -53,3 +55,13 @@ FONT_PATH_BOLD = FONTS_DIR / 'Montserrat-Bold.ttf'
 
 BACKGROUND_GRADIENT_START = (245, 133, 41)  # Instagram-ish orange
 BACKGROUND_GRADIENT_END = (221, 42, 123)    # Instagram-ish pink
+
+# Video and Story Asset Config
+STORY_DURATION = int(os.getenv('STORY_DURATION', '15'))
+USE_CUSTOM_IMAGE = os.getenv('USE_CUSTOM_IMAGE', 'true').lower() == 'true'
+CUSTOM_IMAGE_PATH = ASSETS_DIR / "bstory.png"
+AUTO_GENERATE_IF_MISSING = os.getenv('AUTO_GENERATE_IF_MISSING', 'true').lower() == 'true'
+RANDOM_MUSIC = os.getenv('RANDOM_MUSIC', 'true').lower() == 'true'
+CLEANUP_GENERATED_FILES = os.getenv('CLEANUP_GENERATED_FILES', 'true').lower() == 'true'
+VIDEO_FPS = int(os.getenv('VIDEO_FPS', '30'))
+VIDEO_CODEC = os.getenv('VIDEO_CODEC', 'libx264')

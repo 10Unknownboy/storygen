@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException, Depends
+from apscheduler.triggers.date import DateTrigger
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,6 +13,7 @@ from instagram_client import instagram_client
 from logger import logger
 from history import get_recent_uploads
 from birthday_manager import get_todays_birthdays, get_next_birthday
+import scheduler
 
 # Global state
 scheduler_ref = None
@@ -55,6 +57,16 @@ async def dashboard(request: Request):
     
     session_exists = (BASE_DIR / "sessions" / "session.json").exists()
 
+    scheduled_tasks = []
+    if scheduler_ref:
+        for job in scheduler_ref.get_jobs():
+            if job.id.startswith('manual_'):
+                scheduled_tasks.append({
+                    "id": job.id,
+                    "time": job.next_run_time.strftime('%Y-%m-%d %H:%M:%S %Z') if job.next_run_time else "Running now",
+                    "username": job.args[0] if job.args else "Unknown"
+                })
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -62,9 +74,11 @@ async def dashboard(request: Request):
             "uptime": str(uptime).split('.')[0],
             "current_time": datetime.now(IST_TZ).strftime('%Y-%m-%d %H:%M:%S %Z'),
             "next_run": next_run,
+            "scheduled_tasks": scheduled_tasks,
             "recent_uploads": recent_uploads,
             "todays_birthdays": todays_birthdays,
             "next_birthday_info": next_birthday_info,
+            "last_generation_info": scheduler.last_generation_info,
             "session_exists": session_exists
         }
     )
@@ -91,19 +105,38 @@ async def manual_logout(token: str):
     return {"success": success}
 
 @app.post("/test-story")
-async def test_story(token: str, background_tasks: BackgroundTasks, username: str = "manglesh.__.ks"):
+async def test_story(token: str, username: str = "manglesh.__.ks", target_time: str = None):
     """
     Manually triggers a delayed birthday story upload for a specific user.
+    target_time format: HH:MM-DD/MM/YYYY (e.g. 20:30-12/07/2026)
     """
     verify_secret(token)
-    logger.info(f"Manual /test-story triggered via API for {username}")
     
-    def delayed_job():
-        import time
-        logger.info(f"Waiting 10 seconds before generating and uploading for {username}...")
-        time.sleep(10)
-        process_single_birthday(username, force_upload=True)
-        
-    background_tasks.add_task(delayed_job)
-    
-    return {"status": f"Test pipeline triggered for {username}. It will post in 10 seconds. Check logs for results."}
+    if target_time:
+        try:
+            dt = datetime.strptime(target_time, "%H:%M-%d/%m/%Y")
+            dt = IST_TZ.localize(dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid target_time format. Use HH:MM-DD/MM/YYYY")
+            
+        if dt <= datetime.now(IST_TZ):
+            raise HTTPException(status_code=400, detail="Target time must be in the future.")
+            
+        logger.info(f"Manual /test-story scheduled for {username} at {dt}")
+        job_id = f"manual_{username}_{int(datetime.now().timestamp())}"
+        scheduler_ref.add_job(
+            scheduler.process_single_birthday,
+            trigger=DateTrigger(run_date=dt, timezone=IST_TZ),
+            args=[username, True],
+            id=job_id
+        )
+        return {"status": f"Scheduled story upload for {username} exactly at {dt}"}
+    else:
+        logger.info(f"Manual /test-story triggered immediately for {username}")
+        job_id = f"manual_{username}_immediate_{int(datetime.now().timestamp())}"
+        scheduler_ref.add_job(
+            scheduler.process_single_birthday,
+            args=[username, True],
+            id=job_id
+        )
+        return {"status": f"Test pipeline triggered immediately for {username}."}

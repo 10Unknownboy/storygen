@@ -1,5 +1,10 @@
 import os
 import json
+
+import moviepy.editor as mpe
+import moviepy
+moviepy.VideoFileClip = mpe.VideoFileClip
+
 from instagrapi import Client
 from instagrapi.exceptions import LoginRequired, ChallengeRequired
 from instagrapi.types import StoryMention, UserShort
@@ -96,7 +101,7 @@ class InstagramClient:
                 logger.warning(f"Could not fetch user_id for {username_to_mention}: {e}. Uploading without interactive mention.")
                 mentions = []
 
-            media = self.cl.photo_upload_to_story(
+            media = self.cl.video_upload_to_story(
                 path=image_path,
                 mentions=mentions
             )
