@@ -83,8 +83,8 @@ async def dashboard(request: Request):
         }
     )
 
-@app.get("/health")
-async def health():
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health_check():
     return {
         "status": "healthy",
         "uptime": str(datetime.now(IST_TZ) - start_time),
