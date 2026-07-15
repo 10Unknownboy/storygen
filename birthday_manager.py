@@ -88,6 +88,17 @@ def get_todays_birthdays():
     logger.info(f"Found {len(todays_bday_users)} birthdays for today ({today.strftime('%b %d')}).")
     return todays_bday_users
 
+def format_date(m, d):
+    import calendar
+    if not m or not d:
+        return "Unknown"
+    month_name = calendar.month_name[m]
+    if 11 <= d <= 13:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(d % 10, 'th')
+    return f"{month_name} {d}{suffix}"
+
 def get_next_birthday():
     """
     Finds the next upcoming birthday after today.
@@ -140,6 +151,55 @@ def get_next_birthday():
         if m == next_m and d == next_d:
             users.append(u)
             if not display_date:
-                display_date = b_str
+                display_date = format_date(next_m, next_d)
                 
     return {"date": display_date, "users": users}
+
+def get_all_birthdays():
+    """
+    Returns a list of all valid birthdays, chronologically sorted and well-formatted.
+    """
+    if not CSV_PATH.exists():
+        return []
+        
+    try:
+        df = pd.read_csv(CSV_PATH)
+    except Exception as e:
+        logger.error(f"Failed to read CSV in get_all_birthdays: {e}")
+        return []
+        
+    valid_bdays = []
+    for idx, row in df.iterrows():
+        username = row.get('Username')
+        bday_str = row.get('Birthday')
+        display_name = row.get('Display Name', '')
+        if not username or pd.isna(username):
+            continue
+            
+        m, d = parse_birthday_string(bday_str)
+        if m and d and m <= 12 and d <= 31:
+            valid_bdays.append({
+                'month': m,
+                'day': d,
+                'username': username,
+                'display_name': display_name if pd.notna(display_name) else '',
+                'formatted_date': format_date(m, d)
+            })
+            
+    # Sort chronologically by month and day
+    valid_bdays.sort(key=lambda x: (x['month'], x['day']))
+    
+    # Reorder so upcoming birthdays are first
+    today = datetime.now(IST_TZ)
+    curr_m = today.month
+    curr_d = today.day
+    
+    upcoming = []
+    past = []
+    for b in valid_bdays:
+        if b['month'] > curr_m or (b['month'] == curr_m and b['day'] >= curr_d):
+            upcoming.append(b)
+        else:
+            past.append(b)
+            
+    return upcoming + past

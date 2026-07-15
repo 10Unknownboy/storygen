@@ -12,7 +12,7 @@ from scheduler import start_scheduler, process_birthdays, process_single_birthda
 from instagram_client import instagram_client
 from logger import logger
 from history import get_recent_uploads
-from birthday_manager import get_todays_birthdays, get_next_birthday
+from birthday_manager import get_todays_birthdays, get_next_birthday, get_all_birthdays
 import scheduler
 
 # Global state
@@ -54,6 +54,7 @@ async def dashboard(request: Request):
     recent_uploads = get_recent_uploads(limit=5)
     todays_birthdays = get_todays_birthdays()
     next_birthday_info = get_next_birthday()
+    all_birthdays = get_all_birthdays()
     
     session_exists = (BASE_DIR / "sessions" / "session.json").exists()
 
@@ -78,6 +79,7 @@ async def dashboard(request: Request):
             "recent_uploads": recent_uploads,
             "todays_birthdays": todays_birthdays,
             "next_birthday_info": next_birthday_info,
+            "all_birthdays": all_birthdays,
             "last_generation_info": scheduler.last_generation_info,
             "session_exists": session_exists
         }

@@ -86,6 +86,16 @@
                 <p>No videos generated in this session yet.</p>
             {% endif %}
         </div>
+        <div class="card">
+            <h3>All Birthdays This Year</h3>
+            <p>Select to view all upcoming and past birthdays:</p>
+            <select style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px;">
+                <option value="" disabled selected>View all {{ all_birthdays|length }} birthdays...</option>
+                {% for b in all_birthdays %}
+                    <option value="{{ b.username }}">{{ b.formatted_date }} - @{{ b.username }} ({{ b.display_name }})</option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
 
     <h2>Recent Uploads</h2>
